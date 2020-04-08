@@ -1,0 +1,20 @@
+Tuple
+I use a vector to store fields.
+
+TupleDesc
+I use a vector to store TDItems. I use a map to help find the index.
+
+Catalog
+I use two maps. One is integer to table map, it help to find the table we want. Another is a string to int map, it help to Map names to indexs.
+
+BufferPool
+I use a map from PageID to Page.
+
+HeapPage
+Just follow the instruction.
+
+HeapFile
+I use the RandomAccessFile to readPage(Teaching Assistant's Requirements).
+
+SeqScan
+Just follow the instruction.
