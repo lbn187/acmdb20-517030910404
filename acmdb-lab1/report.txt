@@ -18,3 +18,5 @@ I use the RandomAccessFile to readPage(Teaching Assistant's Requirements).
 
 SeqScan
 Just follow the instruction.
+
+I use about 4~5 hours.
