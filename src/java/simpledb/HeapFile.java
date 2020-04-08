@@ -136,9 +136,15 @@ public class HeapFile implements DbFile {
     public Page readPage(PageId pid) {
         // some code goes here
 		try{
-			FileInputStream stream = new FileInputStream(file);
+			/*FileInputStream stream = new FileInputStream(file);
 			stream.skip(pid.pageNumber() * BufferPool.getPageSize());
 			byte[] bs = new byte[BufferPool.getPageSize()];
+			stream.read(bs);
+			stream.close();
+			return new HeapPage((HeapPageId)pid, bs);*/
+			RandomAccessFile stream = new RandomAccessFile(file, "r");
+			byte[] bs = new byte[BufferPool.getPageSize()];
+			stream.seek(pid.pageNumber() * BufferPool.getPageSize());
 			stream.read(bs);
 			stream.close();
 			return new HeapPage((HeapPageId)pid, bs);

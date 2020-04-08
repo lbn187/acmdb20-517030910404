@@ -67,7 +67,7 @@ public class HeapPage implements Page {
     */
     private int getNumTuples() {        
         // some code goes here
-	return (BufferPool.getPageSize()*8) / (td.getSize() * 8 + 1);
+		return (BufferPool.getPageSize()*8) / (td.getSize() * 8 + 1);
     }
 
     /**
@@ -109,7 +109,7 @@ public class HeapPage implements Page {
      */
     public HeapPageId getId() {
     // some code goes here
-	return pid;
+		return pid;
     }
 
     /**

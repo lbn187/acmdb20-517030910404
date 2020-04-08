@@ -36,8 +36,8 @@ public class BufferPool {
      */
     public BufferPool(int numPages) {
         // some code goes here
-	pageMap = new HashMap<>();
-	this.numPages = numPages;
+		pageMap = new HashMap<>();
+		this.numPages = numPages;
     }
     
     public static int getPageSize() {
