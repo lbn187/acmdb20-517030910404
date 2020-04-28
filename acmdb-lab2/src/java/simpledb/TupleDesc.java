@@ -1,5 +1,4 @@
 package simpledb;
-
 import java.io.Serializable;
 import java.util.*;
 
@@ -77,7 +76,7 @@ public class TupleDesc implements Serializable {
      * 
      * @param typeAr
      *            array specifying the number of and types of fields in this
-     *            TupleDesc. It must contain at least one entry.ã€‚
+     *            TupleDesc. It must contain at least one entry.¡£
      */
     public TupleDesc(Type[] typeAr) {
         // some code goes here

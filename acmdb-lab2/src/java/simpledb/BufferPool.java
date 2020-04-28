@@ -28,6 +28,8 @@ public class BufferPool {
     public static final int DEFAULT_PAGES = 50;
 	private int numPages;
 	private Map<PageId, Page> pageMap;
+	private Map<PageId, Integer> pageNum;
+	private Queue<PageId> pageQueue;
 	
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -37,6 +39,8 @@ public class BufferPool {
     public BufferPool(int numPages) {
         // some code goes here
 		pageMap = new HashMap<>();
+		pageNum = new HashMap<>();
+		pageQueue = new PriorityQueue<>(Comparator.comparingInt(pageNum::get));
 		this.numPages = numPages;
     }
     
@@ -53,7 +57,23 @@ public class BufferPool {
     public static void resetPageSize() {
     	BufferPool.pageSize = PAGE_SIZE;
     }
-
+	private void AddPage(PageId pid, Page page){
+		if(pageMap.get(pid) != null){
+			pageQueue.remove(pid);
+			Integer tmp = pageNum.get(pid);
+			pageNum.put(pid, tmp + 1);
+			pageQueue.add(pid);
+		}else{
+			while(pageMap.size() >= numPages)
+				try{
+					evictPage();
+				} catch (DbException e){
+				}
+			pageMap.put(pid,page);
+			pageNum.put(pid,1);
+			pageQueue.add(pid);
+		}
+	}
     /**
      * Retrieve the specified page with the associated permissions.
      * Will acquire a lock and may block if that lock is held by another
@@ -75,11 +95,7 @@ public class BufferPool {
 		if(pageMap.get(pid) != null)return pageMap.get(pid);
 		Page page = Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid);
 		if(page == null) throw new DbException("gg");
-		for(Map.Entry<PageId, Page> item:pageMap.entrySet()){
-			if(pageMap.size() < numPages)break;
-			pageMap.remove(item.getKey());		
-		}
-		pageMap.put(pid, page);
+		AddPage(pid, page);
 		return page;
     }
 
@@ -147,6 +163,15 @@ public class BufferPool {
         throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         // not necessary for lab1
+		try{
+			List<Page> pages = Database.getCatalog().getDatabaseFile(tableId).insertTuple(tid, t);
+			for(Page page:pages){
+				page.markDirty(true, tid);
+				AddPage(page.getId(), page);
+			}
+		}catch (DbException | IOException | TransactionAbortedException e){
+			e.printStackTrace();
+		}
     }
 
     /**
@@ -166,6 +191,15 @@ public class BufferPool {
         throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         // not necessary for lab1
+		try{
+			List<Page> pages = Database.getCatalog().getDatabaseFile(t.getRecordId().getPageId().getTableId()).deleteTuple(tid, t);
+			for(Page page:pages){
+				page.markDirty(true, tid);
+				AddPage(page.getId(), page);
+			}
+		}catch (DbException | IOException | TransactionAbortedException e){
+			e.printStackTrace();
+		}
     }
 
     /**
@@ -176,7 +210,12 @@ public class BufferPool {
     public synchronized void flushAllPages() throws IOException {
         // some code goes here
         // not necessary for lab1
-
+		for (PageId pid:pageMap.keySet())
+			try{
+				flushPage(pid);
+			} catch (IOException e){
+				e.printStackTrace();
+			}
     }
 
     /** Remove the specific page id from the buffer pool.
@@ -190,6 +229,9 @@ public class BufferPool {
     public synchronized void discardPage(PageId pid) {
         // some code goes here
         // not necessary for lab1
+		pageMap.remove(pid);
+		pageNum.remove(pid);
+		pageQueue.remove(pid);
     }
 
     /**
@@ -199,6 +241,11 @@ public class BufferPool {
     private synchronized  void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
+		Page page = pageMap.get(pid);
+		if(page.isDirty() !=null){
+			page.markDirty(false, null);
+			Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(page);
+		}
     }
 
     /** Write all pages of the specified transaction to disk.
@@ -215,6 +262,13 @@ public class BufferPool {
     private synchronized  void evictPage() throws DbException {
         // some code goes here
         // not necessary for lab1
+		PageId evictpage = pageQueue.poll();
+		try{
+			flushPage(evictpage);
+		} catch (IOException e){
+			e.printStackTrace();
+		}
+		discardPage(evictpage);
     }
 
 }

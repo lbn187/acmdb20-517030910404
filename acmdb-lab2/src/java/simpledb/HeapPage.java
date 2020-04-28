@@ -20,8 +20,9 @@ public class HeapPage implements Page {
     final int numSlots;
 
     byte[] oldData;
+	
     private final Byte oldDataLock=new Byte((byte)0);
-
+	TransactionId dirtytid;
     /**
      * Create a HeapPage from a set of bytes of data read from disk.
      * The format of a HeapPage is a set of header bytes indicating
@@ -263,6 +264,7 @@ public class HeapPage implements Page {
     public void markDirty(boolean dirty, TransactionId tid) {
         // some code goes here
 	// not necessary for lab1
+		this.dirtytid = tid;
     }
 
     /**
@@ -271,7 +273,7 @@ public class HeapPage implements Page {
     public TransactionId isDirty() {
         // some code goes here
 	// Not necessary for lab1
-        return null;      
+        return dirtytid;      
     }
 
     /**
@@ -308,10 +310,10 @@ public class HeapPage implements Page {
      */
     public Iterator<Tuple> iterator() {
         // some code goes here
-	ArrayList<Tuple> tmp = new ArrayList<>();
-	for(int i = 0; i < numSlots; i++)
-		if(isSlotUsed(i))tmp.add(tuples[i]);
-	return tmp.iterator();
+		ArrayList<Tuple> tmp = new ArrayList<>();
+		for(int i = 0; i < numSlots; i++)
+			if(isSlotUsed(i))tmp.add(tuples[i]);
+		return tmp.iterator();
     }
 
 }
