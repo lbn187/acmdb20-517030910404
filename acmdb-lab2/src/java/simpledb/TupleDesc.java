@@ -12,7 +12,7 @@ public class TupleDesc implements Serializable {
      * */
     public static class TDItem implements Serializable {
 
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID =  1L;
 
         /**
          * The type of the field
