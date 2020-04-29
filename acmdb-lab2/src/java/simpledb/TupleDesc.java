@@ -2,7 +2,7 @@ package simpledb;
 import java.io.Serializable;
 import java.util.*;
 
-/**
+/** 
  * TupleDesc describes the schema of a tuple.
  */
 public class TupleDesc implements Serializable {
@@ -70,7 +70,7 @@ public class TupleDesc implements Serializable {
      * 
      * @param typeAr
      *            array specifying the number of and types of fields in this
-     *            TupleDesc. It must contain at least one entry.¡£
+     *            TupleDesc. It must contain at least one entry.ã€‚
      */
     public TupleDesc(Type[] typeAr) {
         // some code goes here
