@@ -34,7 +34,6 @@ public class TupleDesc implements Serializable {
         }
     }
 	private Vector<TDItem> TDItemList;
-	private Map<String, Integer> NameMap;
     /**
      * @return
      *        An iterator which iterates over all the field TDItems
@@ -43,7 +42,6 @@ public class TupleDesc implements Serializable {
     public Iterator<TDItem> iterator() {
         // some code goes here
 		return TDItemList.iterator();
-        //return null;
     }
 
     private static final long serialVersionUID = 1L;
@@ -61,13 +59,9 @@ public class TupleDesc implements Serializable {
      */
     public TupleDesc(Type[] typeAr, String[] fieldAr) {
         // some code goes here
-		assert (typeAr.length > 0) && (typeAr.length == fieldAr.length);
 		TDItemList = new Vector<>();
-		NameMap = new HashMap<>();
-		for(int i = 0; i < typeAr.length; i++) {
+		for(int i = 0; i < typeAr.length; i++)
 			TDItemList.add(new TDItem(typeAr[i], fieldAr[i]));
-			NameMap.put(fieldAr[i], i);
-		}
     }
 
     /**
@@ -80,12 +74,9 @@ public class TupleDesc implements Serializable {
      */
     public TupleDesc(Type[] typeAr) {
         // some code goes here
-		assert typeAr.length > 0;
 		TDItemList = new Vector<>();
-		NameMap = new HashMap<>();
-		for(int i = 0; i < typeAr.length; i++) {
+		for(int i = 0; i < typeAr.length; i++)
 			TDItemList.add(new TDItem(typeAr[i], null));
-		}
     }
 
     /**
@@ -138,11 +129,15 @@ public class TupleDesc implements Serializable {
      */
     public int fieldNameToIndex(String name) throws NoSuchElementException {
         // some code goes here
-		if(name == null)throw new NoSuchElementException();
-		if(NameMap.get(name) != null)
-			return NameMap.get(name);
-		throw new NoSuchElementException();
-    }
+		//if(name == null)throw new NoSuchElementException();
+		//if(NameMap.get(name) != null)
+		//	return NameMap.get(name);
+		//throw new NoSuchElementException();
+		for(int i = 0; i < TDItemList.size(); i++)
+            if(Objects.equals(name,getFieldName(i)))
+                return i;
+        throw new NoSuchElementException();
+	}
 
     /**
      * @return The size (in bytes) of tuples corresponding to this TupleDesc.
@@ -151,9 +146,8 @@ public class TupleDesc implements Serializable {
     public int getSize() {
         // some code goes here
         int sum = 0;
-		for(TDItem item : TDItemList){
+		for(TDItem item : TDItemList)
 			sum += item.fieldType.getLen();
-		}
 		return sum;
     }
 
@@ -198,7 +192,7 @@ public class TupleDesc implements Serializable {
 		if(!(o instanceof TupleDesc))return false;
 		if(((TupleDesc)o).numFields() != TDItemList.size())return false;
 		for(int i = 0; i < TDItemList.size(); i++){
-			if(!TDItemList.get(i).fieldType.equals(((TupleDesc)o).getFieldType(i)))
+			if(!Objects.equals(getFieldType(i),(((TupleDesc)o).getFieldType(i))))
 				return false;
 		}
         return true;

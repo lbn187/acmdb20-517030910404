@@ -34,9 +34,6 @@ public class BTreeScanTest extends SimpleDbTestBase {
     	for (int columns : columnSizes) {
     		int keyField = r.nextInt(columns);
             for (int rows : rowSizes) {
-				System.out.print(columns);
-				System.out.print(",");
-				System.out.println(rows);
                 ArrayList<ArrayList<Integer>> tuples = new ArrayList<ArrayList<Integer>>();
                 BTreeFile f = BTreeUtility.createRandomBTreeFile(columns, rows, null, tuples, keyField);
                 BTreeScan scan = new BTreeScan(tid, f.getId(), "table", null);

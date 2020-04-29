@@ -243,6 +243,7 @@ public class HeapPage implements Page {
     public void deleteTuple(Tuple t) throws DbException {
         // some code goes here
         // not necessary for lab1
+		throw new IllegalStateException();
     }
 
     /**
@@ -255,6 +256,7 @@ public class HeapPage implements Page {
     public void insertTuple(Tuple t) throws DbException {
         // some code goes here
         // not necessary for lab1
+		throw new IllegalStateException();
     }
 
     /**
@@ -282,10 +284,10 @@ public class HeapPage implements Page {
     public int getNumEmptySlots() {
         // some code goes here
         int num = 0;
-	for(int i = 0; i < numSlots; i++){
-		if(!isSlotUsed(i))num++;	
-	}
-	return num;
+		for(int i = 0; i < numSlots; i++){
+			if(!isSlotUsed(i))num++;	
+		}
+		return num;
     }
 
     /**
@@ -302,6 +304,7 @@ public class HeapPage implements Page {
     private void markSlotUsed(int i, boolean value) {
         // some code goes here
         // not necessary for lab1
+		throw new IllegalStateException();
     }
 
     /**

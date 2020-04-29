@@ -53,6 +53,15 @@ public class Catalog {
         // some code goes here
 		assert name != null;
 		Table tmp = IDMap.get(file.getId());
+		if(tmp != null){
+			IDMap.remove(tmp.file.getId());
+			NameMap.remove(tmp.name);
+		}
+		tmp = IDMap.get(NameMap.get(name));
+		if(tmp != null){
+			IDMap.remove(tmp.file.getId());
+			NameMap.remove(tmp.name);
+		}
 		IDMap.put(file.getId(), new Table(file, name, pkeyField));
 		NameMap.put(name, file.getId());
     }
