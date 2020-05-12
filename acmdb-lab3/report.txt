@@ -1,0 +1,31 @@
+Filter
+check from the first to the last
+
+Join
+simple nested-loops join
+
+HashEquiJoin
+Use map to accelerate. Loop through one dimension, query the other dimension in the map.
+
+IntegerAggregator
+Use map to store tuple and value by groupfield.
+Classify discussions based on operators.
+
+StringAggregator
+Use map to store tuple and value by groupfield.
+
+insertTuple & deleteTuple
+insert & delete tuple in the specific area, and mark slot Used or not used.
+
+Insert & Delete
+Insert or delete by order, and count the number.
+
+API Change
+Class Tuple
+static Tuple merge(Tuple t1, Tuple t2);
+merge two tuples into one tuple.
+
+Running Time of the sql contest
+1. 0.05 seconds
+2. 0.08 seconds
+3. 0.11 seconds
