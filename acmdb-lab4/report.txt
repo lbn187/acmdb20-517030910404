@@ -1,0 +1,11 @@
+IntHistogram
+Given the number of buckets, minimum value and maximum value, I can calculate the size of each bucket, and estimate the value we want.
+The size is (max-min)/bucket+1, the only thing to do is find where the value is and calculate it.
+
+TableStats
+Scan the table to build the statistics to help us implement the histograms.
+
+orderJoins
+Just follow the algorithm in the doc.
+
+I took about 3 hours.
