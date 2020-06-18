@@ -64,9 +64,6 @@ public class TransactionTest extends SimpleDbTestBase {
         DbFileIterator it = table.iterator(tid);
         it.open();
         Tuple tup = it.next();
-		System.out.print(threads);
-		System.out.print(" ");
-		System.out.println(((IntField) tup.getField(0)).getValue());
         assertEquals(threads, ((IntField) tup.getField(0)).getValue());
         it.close();
         Database.getBufferPool().transactionComplete(tid);

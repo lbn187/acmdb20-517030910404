@@ -86,8 +86,8 @@ public class BTreeScanTest extends SimpleDbTestBase {
                 new int[]{0, 1, 2, 511, 512, 513, 1023, 1024, 1025, 4096 + r.nextInt(4096)};
         validateScan(columnSizes, rowSizes);
     }
-	
-	 /** Test that rewinding a BTreeScan iterator works. */
+
+    /** Test that rewinding a BTreeScan iterator works. */
     @Test public void testRewind() throws IOException, DbException, TransactionAbortedException {
         ArrayList<ArrayList<Integer>> tuples = new ArrayList<ArrayList<Integer>>();
         int keyField = r.nextInt(2);
@@ -102,7 +102,7 @@ public class BTreeScanTest extends SimpleDbTestBase {
             Tuple t = scan.next();
             assertEquals(tuples.get(i), SystemTestUtil.tupleToList(t));
         }
-		
+
         scan.rewind();
         for (int i = 0; i < 100; ++i) {
             assertTrue(scan.hasNext());
