@@ -1,4 +1,5 @@
 I use Lock class, it saves the shared lock and exclusive lock in a page.  Each page have a Lock.
 And I use a LockMap that map pageId to the Lock class the page have. I use a tidMap that saves the pages the transaction has.
 To judge whether there is a deadlock, i use the LockGraph class, it contains a directed graph that linked the transactions, if there exists a cycle, there is a deadlock.
+I could pass all the test in my machine. But I don't know why it get a small fault in azure pipeline.
 I took about 1 day.
