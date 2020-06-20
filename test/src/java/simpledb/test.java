@@ -12,7 +12,7 @@ public class test {
 
         // create the table, associate it with some_data_file.dat
         // and tell the catalog about the schema of this table.
-        HeapFile table1 = new HeapFile(new File("some_data_file.dat"), descriptor);
+        HeapFile table1 = new HeapFile(new File("naive_data_file.dat"), descriptor);
         Database.getCatalog().addTable(table1, "test");
 
         // construct the query: we use a simple SeqScan, which spoonfeeds
@@ -23,7 +23,6 @@ public class test {
         try {
             // and run it
             f.open();
-            System.out.println("Here I comes");
             while (f.hasNext()) {
                 Tuple tup = f.next();
                 System.out.println(tup);
