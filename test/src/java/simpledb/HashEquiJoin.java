@@ -1,7 +1,6 @@
 package simpledb;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The Join operator implements the relational join operation.
@@ -9,12 +8,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HashEquiJoin extends Operator {
 
     private static final long serialVersionUID = 1L;
-
-    private JoinPredicate p;
-    private DbIterator child1, child2;
-    private Tuple curT1 = null;
-    private Map<Field, ArrayList<Tuple>> hashMap = new ConcurrentHashMap<>();
-
+	private JoinPredicate joinpredicate;
+	private DbIterator child1;
+	private DbIterator child2;
+	private Map<Field, Integer> map;
+	private int id;
+	private Vector<Vector<Tuple> > vec;
+	private Tuple tuple1;
+	private int nv;
     /**
      * Constructor. Accepts to children to join and the predicate to join them
      * on
@@ -28,14 +29,18 @@ public class HashEquiJoin extends Operator {
      */
     public HashEquiJoin(JoinPredicate p, DbIterator child1, DbIterator child2) {
         // some code goes here
-        this.p = p;
-        this.child1 = child1;
-        this.child2 = child2;
+		this.joinpredicate = p;
+		this.child1 = child1;
+		this.child2 = child2;
+		this.map = new HashMap<>();
+		this.id = 0;
+		this.vec = new Vector<>();
+		this.tuple1 = null;
     }
 
     public JoinPredicate getJoinPredicate() {
         // some code goes here
-        return p;
+        return joinpredicate;
     }
 
     public TupleDesc getTupleDesc() {
@@ -46,42 +51,47 @@ public class HashEquiJoin extends Operator {
     public String getJoinField1Name()
     {
         // some code goes here
-        return child1.getTupleDesc().getFieldName(p.getField1());
+		return child1.getTupleDesc().getFieldName(joinpredicate.getField1());
     }
 
     public String getJoinField2Name()
     {
         // some code goes here
-        return child2.getTupleDesc().getFieldName(p.getField2());
+        return child2.getTupleDesc().getFieldName(joinpredicate.getField2());
     }
     
     public void open() throws DbException, NoSuchElementException,
             TransactionAbortedException {
         // some code goes here
-        child1.open();
-        child2.open();
-        while (child2.hasNext()){
-            Tuple t2 = child2.next();
-            Field hash = t2.getField(p.getField2());
-            if (!hashMap.containsKey(hash))
-                hashMap.put(hash, new ArrayList<>());
-            ArrayList<Tuple> tupleList = hashMap.get(hash);
-            tupleList.add(t2);
-        }
-        super.open();
+		map.clear();
+		vec.clear();
+		child1.open();
+		child2.open();
+		while(child2.hasNext()){
+			Tuple tuple = child2.next();
+			Field field = tuple.getField(joinpredicate.getField2());
+			if(map.get(field) == null){
+				vec.add(new Vector<>());
+				map.put(field, id++);
+			}
+			vec.get(map.get(field)).add(tuple);
+		}
+		super.open();
     }
 
     public void close() {
         // some code goes here
-        super.close();
-        child1.close();
-        child2.close();
+		super.close();
+		map.clear();
+		vec.clear();
+		child1.close();
+		child2.close();
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
-        child1.rewind();
-        child2.rewind();
+		child1.rewind();
+		child2.rewind();
     }
 
     transient Iterator<Tuple> listIt = null;
@@ -106,30 +116,25 @@ public class HashEquiJoin extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
-        if (listIt != null && listIt.hasNext()){
-            Tuple t2 = listIt.next();
-            Tuple ret = new Tuple(getTupleDesc());
-
-            for (int i = 0; i < child1.getTupleDesc().numFields(); ++i)
-                ret.setField(i, curT1.getField(i));
-
-            for (int i = 0; i < child2.getTupleDesc().numFields(); ++i)
-                ret.setField(i + child1.getTupleDesc().numFields(), t2.getField(i));
-
-            return ret;
-        }
-        //need next tuple in child1
-        while (child1.hasNext()){
-            curT1 = child1.next();
-            Field hash = curT1.getField(p.getField1());
-            ArrayList<Tuple> match = hashMap.get(hash);
-            if (match != null){
-                listIt = match.iterator();
-                return fetchNext();
-            }
-        }
-
-        return null;
+        while(true){
+			if(tuple1 == null){
+				if(!child1.hasNext())return null;
+				tuple1 = child1.next();
+				nv = 0;
+			}
+			Field field1 = tuple1.getField(joinpredicate.getField1());
+			if(map.get(field1) == null){
+				tuple1 = null;
+				continue;
+			}
+			int num = map.get(field1);
+			assert num < vec.size();
+			if(nv >= vec.get(num).size()){
+				tuple1 = null;
+				continue;
+			}
+			return Tuple.merge(tuple1, vec.get(num).get(nv++));
+		}
     }
 
     @Override
@@ -141,8 +146,8 @@ public class HashEquiJoin extends Operator {
     @Override
     public void setChildren(DbIterator[] children) {
         // some code goes here
-        child1 = children[0];
-        child2 = children[1];
+		child1 = children[0];
+		child2 = children[1];
     }
     
 }
