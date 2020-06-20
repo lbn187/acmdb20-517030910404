@@ -8,10 +8,8 @@ import java.util.*;
 public class Filter extends Operator {
 
     private static final long serialVersionUID = 1L;
-
-    private Predicate p;
-    private DbIterator child;
-
+	private Predicate predicate;
+	private DbIterator child;
     /**
      * Constructor accepts a predicate to apply and a child operator to read
      * tuples to filter from.
@@ -23,13 +21,13 @@ public class Filter extends Operator {
      */
     public Filter(Predicate p, DbIterator child) {
         // some code goes here
-        this.p = p;
-        this.child = child;
+		this.predicate = p;
+		this.child = child;
     }
 
     public Predicate getPredicate() {
         // some code goes here
-        return p;
+        return predicate;
     }
 
     public TupleDesc getTupleDesc() {
@@ -40,19 +38,19 @@ public class Filter extends Operator {
     public void open() throws DbException, NoSuchElementException,
             TransactionAbortedException {
         // some code goes here
-        child.open();
-        super.open();
+		child.open();
+		super.open();
     }
 
     public void close() {
         // some code goes here
-        super.close();
-        child.close();
+		super.close();
+		child.close();
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
-        child.rewind();
+		child.rewind();
     }
 
     /**
@@ -67,11 +65,10 @@ public class Filter extends Operator {
     protected Tuple fetchNext() throws NoSuchElementException,
             TransactionAbortedException, DbException {
         // some code goes here
-        while (child.hasNext()){
-            Tuple t = child.next();
-            if (p.filter(t))
-                return t;
-        }
+		while(child.hasNext()){
+			Tuple tuple = child.next();
+			if(predicate.filter(tuple))return tuple;
+		}
         return null;
     }
 
@@ -84,7 +81,7 @@ public class Filter extends Operator {
     @Override
     public void setChildren(DbIterator[] children) {
         // some code goes here
-        child = children[0];
+		child = children[0];
     }
 
 }

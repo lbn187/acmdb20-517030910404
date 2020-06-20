@@ -1,6 +1,6 @@
 package simpledb;
 
-import java.io.IOException;
+import java.io.*;
 
 /**
  * The delete operator. Delete reads tuples from its child operator and removes
@@ -9,16 +9,13 @@ import java.io.IOException;
 public class Delete extends Operator {
 
     private static final long serialVersionUID = 1L;
-
-    private TransactionId t;
-    private DbIterator child;
-    private TupleDesc td;
-    private boolean called = false;
-
+	private TransactionId tid;
+	private DbIterator child;
+	private boolean flag;
     /**
      * Constructor specifying the transaction that this delete belongs to as
      * well as the child to read from.
-     *
+     * 
      * @param t
      *            The transaction this delete runs in
      * @param child
@@ -26,72 +23,72 @@ public class Delete extends Operator {
      */
     public Delete(TransactionId t, DbIterator child) {
         // some code goes here
-        this.t = t;
-        this.child = child;
-        this.td = new TupleDesc(new Type[]{Type.INT_TYPE});
+		this.tid = t;
+		this.child = child;
+		this.flag = true;
     }
 
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return td;
+        return new TupleDesc(new Type[]{Type.INT_TYPE});
     }
 
     public void open() throws DbException, TransactionAbortedException {
         // some code goes here
-        super.open();
-        child.open();
+		child.open();
+		super.open();
+		flag = false;
     }
 
     public void close() {
         // some code goes here
-        child.close();
-        super.close();
+		super.close();
+		child.close();
+		flag = true;
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
-        child.rewind();
+		child.rewind();
+		flag = false;
     }
 
     /**
      * Deletes tuples as they are read from the child operator. Deletes are
      * processed via the buffer pool (which can be accessed via the
      * Database.getBufferPool() method.
-     *
+     * 
      * @return A 1-field tuple containing the number of deleted records.
      * @see Database#getBufferPool
      * @see BufferPool#deleteTuple
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
-        if (called)
-            return null;
-        int cnt = 0;
-        while (child.hasNext()){
-            Tuple tup = child.next();
-            try {
-                Database.getBufferPool().deleteTuple(t, tup);
-                ++cnt;
-            }
-            catch (IOException e){
-                e.printStackTrace();
-            }
-        }
-        called = true;
-        Tuple ret = new Tuple(td);
-        ret.setField(0, new IntField(cnt));
-        return ret;
+        if(flag)return null;
+		flag = true;
+		int num = 0;
+		while(child.hasNext()){
+			try{
+				Database.getBufferPool().deleteTuple(tid, child.next());
+			} catch (DbException | IOException | TransactionAbortedException e){
+			}
+			num++;
+		}
+		Tuple tuple = new Tuple(new TupleDesc(new Type[]{Type.INT_TYPE}));
+		tuple.setField(0, new IntField(num));
+		return tuple;
     }
 
     @Override
     public DbIterator[] getChildren() {
         // some code goes here
-        return new DbIterator[] {child};
+        return new DbIterator[]{child};
     }
 
     @Override
     public void setChildren(DbIterator[] children) {
         // some code goes here
-        child = children[0];
+		child = children[0];
     }
+
 }
