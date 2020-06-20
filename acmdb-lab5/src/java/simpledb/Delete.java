@@ -70,9 +70,10 @@ public class Delete extends Operator {
 		while(child.hasNext()){
 			try{
 				Database.getBufferPool().deleteTuple(tid, child.next());
+				num++;
 			} catch (DbException | IOException | TransactionAbortedException e){
+				e.printStackTrace();
 			}
-			num++;
 		}
 		Tuple tuple = new Tuple(new TupleDesc(new Type[]{Type.INT_TYPE}));
 		tuple.setField(0, new IntField(num));
