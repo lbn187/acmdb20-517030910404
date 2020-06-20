@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * TableStats represents statistics (e.g., histograms) about base tables in a
@@ -12,12 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * This class is not needed in implementing lab1, lab2 and lab3.
  */
 public class TableStats {
-	private int numtuple;
-	private int numpage;
-	private int ioCostPerPage;
-	private IntHistogram[] IntHis;
-	private StringHistogram[] StringHis;
-	
+
     private static final ConcurrentHashMap<String, TableStats> statsMap = new ConcurrentHashMap<String, TableStats>();
 
     static final int IOCOSTPERPAGE = 1000;
@@ -81,6 +77,15 @@ public class TableStats {
      *            The cost per page of IO. This doesn't differentiate between
      *            sequential-scan IO and disk seeks.
      */
+    private int tableid;
+    private int ioCostPerPage;
+    private HeapFile table;
+    private TupleDesc td;
+    private int nTup;
+
+    private ConcurrentMap<Integer, IntHistogram> intHMap;
+    private ConcurrentMap<Integer, StringHistogram> stringHMap;
+
     public TableStats(int tableid, int ioCostPerPage) {
         // For this function, you'll have to get the
         // DbFile for the table in question,
@@ -90,48 +95,63 @@ public class TableStats {
         // necessarily have to (for example) do everything
         // in a single scan of the table.
         // some code goes here
-		this.ioCostPerPage = ioCostPerPage;
-		this.numpage = ((HeapFile)Database.getCatalog().getDatabaseFile(tableid)).numPages();
-		int numfield = ((HeapFile)Database.getCatalog().getDatabaseFile(tableid)).getTupleDesc().numFields();
-		int mx[] = new int[numfield];
-		int mi[] = new int[numfield];
-		this.IntHis = new IntHistogram[numfield];
-		this.StringHis = new StringHistogram[numfield];
-		for(int i = 0; i < numfield; i++){
-			mx[i] = Integer.MIN_VALUE;
-			mi[i] = Integer.MAX_VALUE;
-		}
-		SeqScan seqscan = new SeqScan(new TransactionId(), tableid, "");
-		try{
-			seqscan.open();
-			while(seqscan.hasNext()){
-				this.numtuple++;
-				Tuple tuple = seqscan.next();
-				for(int i = 0; i < numfield; i++){
-					if(tuple.getField(i) instanceof IntField){
-						IntField intfield = (IntField)tuple.getField(i);
-						if(intfield.compare(Predicate.Op.GREATER_THAN, new IntField(mx[i])))
-							mx[i] = intfield.getValue();
-						if(intfield.compare(Predicate.Op.LESS_THAN, new IntField(mi[i])))
-							mi[i] = intfield.getValue();
-					}
-				}
-			}
-			for(int i = 0; i < numfield; i++){
-				IntHis[i] = new IntHistogram(NUM_HIST_BINS, mi[i], mx[i]);
-				StringHis[i] = new StringHistogram(NUM_HIST_BINS);
-			}
-			seqscan.rewind();
-			while(seqscan.hasNext()){
-				Tuple tuple = seqscan.next();
-				for(int i = 0; i < numfield; i++){
-					if(tuple.getField(i) instanceof IntField)IntHis[i].addValue(((IntField)tuple.getField(i)).getValue());
-					else StringHis[i].addValue(((StringField)tuple.getField(i)).getValue());
-				}
-			}
-			seqscan.close();
-		}catch (DbException | TransactionAbortedException e){
-		}
+        this.tableid = tableid;
+        this.ioCostPerPage = ioCostPerPage;
+        this.table = (HeapFile) Database.getCatalog().getDatabaseFile(tableid);
+        this.td = this.table.getTupleDesc();
+        this.nTup = 0;
+        this.intHMap = new ConcurrentHashMap<>();
+        this.stringHMap = new ConcurrentHashMap<>();
+
+        //create Histograms
+        Transaction transaction = new Transaction();
+        DbFileIterator tI = table.iterator(transaction.getId());
+        try{
+            tI.open();
+            int maxList[] = new int[td.numFields()];
+            int minList[] = new int[td.numFields()];
+            for (int i = 0; i < td.numFields(); ++i){
+                maxList[i] = Integer.MIN_VALUE;
+                minList[i] = Integer.MAX_VALUE;
+            }
+            while (tI.hasNext()){
+                ++nTup;
+                Tuple t = tI.next();
+                for (int i = 0; i < td.numFields(); ++i){
+                    if (td.getFieldType(i).equals(Type.INT_TYPE)){
+                        int val = ((IntField) t.getField(i)).getValue();
+                        maxList[i] = Integer.max(maxList[i], val);
+                        minList[i] = Integer.min(minList[i], val);
+                    }
+                }
+            }
+            for (int i = 0; i < td.numFields(); ++i){
+                if (td.getFieldType(i).equals(Type.INT_TYPE))
+                    intHMap.put(i, new IntHistogram(NUM_HIST_BINS, minList[i], maxList[i]));
+                else if (td.getFieldType(i).equals(Type.STRING_TYPE))
+                    stringHMap.put(i, new StringHistogram(NUM_HIST_BINS));
+            }
+            tI.rewind();
+            while (tI.hasNext()){
+                Tuple t = tI.next();
+                for (int i = 0; i < td.numFields(); ++i){
+                    if (td.getFieldType(i).equals(Type.INT_TYPE)) {
+                        int val = ((IntField) t.getField(i)).getValue();
+                        intHMap.get(i).addValue(val);
+                    }
+                    else if (td.getFieldType(i).equals(Type.STRING_TYPE)){
+                        String val = ((StringField) t.getField(i)).getValue();
+                        stringHMap.get(i).addValue(val);
+                    }
+                }
+            }
+        }
+        catch (TransactionAbortedException e){
+            e.printStackTrace();
+        }
+        catch (DbException e){
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -148,7 +168,7 @@ public class TableStats {
      */
     public double estimateScanCost() {
         // some code goes here
-        return numpage * ioCostPerPage;
+        return table.numPages() * ioCostPerPage;
     }
 
     /**
@@ -162,7 +182,7 @@ public class TableStats {
      */
     public int estimateTableCardinality(double selectivityFactor) {
         // some code goes here
-        return (int)(selectivityFactor * numtuple);
+        return (int) Math.ceil(nTup * selectivityFactor);
     }
 
     /**
@@ -195,8 +215,16 @@ public class TableStats {
      */
     public double estimateSelectivity(int field, Predicate.Op op, Field constant) {
         // some code goes here
-        if(constant instanceof IntField)return (IntHis[field]).estimateSelectivity(op, ((IntField)constant).getValue());
-		else return (StringHis[field]).estimateSelectivity(op, ((StringField)constant).getValue());
+        if (intHMap.containsKey(field)){
+            int val = ((IntField) constant).getValue();
+            return intHMap.get(field).estimateSelectivity(op, val);
+        }
+        if (stringHMap.containsKey(field)){
+            String val = ((StringField) constant).getValue();
+            return stringHMap.get(field).estimateSelectivity(op, val);
+
+        }
+        return 1.0;
     }
 
     /**
@@ -204,7 +232,7 @@ public class TableStats {
      * */
     public int totalTuples() {
         // some code goes here
-        return numtuple;
+        return this.nTup;
     }
 
 }
